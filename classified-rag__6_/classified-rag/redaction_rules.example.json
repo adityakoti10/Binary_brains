@@ -1,0 +1,9 @@
+{
+  "_comment": "Copy to redaction_rules.json (or set REDACTION_RULES_FILE). Each rule masks matching text as [REDACTED:<NAME>] for any user BELOW min_clearance. Omit min_clearance (or use null) to mask for everyone. allow_users is a need-to-know list that bypasses the clearance test. Give exactly one of 'regex' or 'terms'. Built-in rules SSN and CARD are masked for everyone unless you define a rule with the same name. A malformed file makes queries FAIL rather than answer unredacted.",
+  "rules": [
+    { "name": "CODEWORD", "terms": ["NIGHTHAWK", "Night Hawk"], "min_clearance": "TOP_SECRET", "allow_users": [] },
+    { "name": "SOURCE",   "terms": ["Agent Falcon"], "min_clearance": null, "allow_users": ["alice"] },
+    { "name": "GRID",     "regex": "\\b\\d{1,2}[A-Z]{3}\\d{10}\\b", "min_clearance": "SECRET" },
+    { "name": "EMAIL",    "regex": "[\\w.+-]+@[\\w-]+\\.[\\w.-]+", "min_clearance": "CONFIDENTIAL" }
+  ]
+}

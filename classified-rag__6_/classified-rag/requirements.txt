@@ -1,0 +1,41 @@
+# Python 3.10+ (3.11 recommended).
+# INSTALL TORCH FIRST with the CUDA build for your GPU (selector: pytorch.org/get-started/locally),
+# then: pip install -r requirements.txt
+
+# --- ingestion ---
+docling>=2.0.0             # layout + OCR + table parsing (falls back to plain text if it fails)
+drain3>=0.9.11             # streaming log template mining
+
+# --- embeddings / reranking ---
+FlagEmbedding>=1.2.10      # BGE-M3 embeddings + bge-reranker-v2-m3
+sentence-transformers>=3.0.0
+
+# --- fast triage (doc type / urgency / log severity) ---
+setfit>=1.1.0              # default backend
+datasets>=2.20
+laya>=0.3.20               # OPTIONAL: only used when TRIAGE_BACKEND=laya
+
+# --- vector store ---
+psycopg2-binary>=2.9
+pgvector>=0.3.0
+SQLAlchemy>=2.0
+
+# --- verification ---
+transformers>=4.44
+
+# --- entity resolution ---
+gliner>=0.2.13
+rapidfuzz>=3.9
+
+# --- provenance graph ---
+neo4j>=5.20
+
+# --- web interface ---
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+
+# --- misc ---
+requests>=2.32
+pydantic>=2.7
+python-dotenv>=1.0

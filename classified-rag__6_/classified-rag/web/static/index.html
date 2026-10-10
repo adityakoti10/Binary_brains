@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Fusion</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --text:#1c2230; --muted:#667085; --line:#e4e7ec;
+    --accent:#2f5bea; --ok:#12805c; --warn:#b54708; --bad:#b42318;
+    --ok-bg:#e6f6ef; --warn-bg:#fdf2e3; --bad-bg:#fdeceb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1218; --card:#171b23; --text:#e6e9ef; --muted:#98a1b3; --line:#2a303c;
+      --accent:#7c9bff; --ok:#4cc38a; --warn:#f5a623; --bad:#ff7a70;
+      --ok-bg:#12281f; --warn-bg:#2d2213; --bad-bg:#2e1a19;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+         padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
+  h1{font-size:17px;margin:0}
+  main{max-width:900px;margin:0 auto;padding:18px 16px 60px;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h2{font-size:14px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  input[type=password],input[type=text],select,textarea{
+    width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--bg);color:var(--text);font:inherit}
+  textarea{min-height:76px;resize:vertical}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;
+         font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .row>*{flex:1 1 180px}
+  .row>button{flex:0 0 auto}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;
+         background:var(--line);color:var(--text);letter-spacing:.03em}
+  .lvl-0{background:var(--ok-bg);color:var(--ok)}
+  .lvl-1{background:#e8f0fe;color:#1a56db}
+  .lvl-2{background:var(--warn-bg);color:var(--warn)}
+  .lvl-3{background:var(--bad-bg);color:var(--bad)}
+  .dots{display:flex;gap:12px;font-size:12px;color:var(--muted)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:4px}
+  .dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
+  .msg{font-size:13px;margin-top:8px;color:var(--muted);white-space:pre-wrap}
+  .msg.err{color:var(--bad)} .msg.good{color:var(--ok)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px}
+  .kpi b{display:block;font-size:20px}
+  .kpi span{font-size:12px;color:var(--muted)}
+  .answer{white-space:pre-wrap;font-size:16px;line-height:1.6}
+  .chip{display:inline-block;margin:0 2px;padding:0 6px;border-radius:6px;font-size:12px;font-weight:700;
+        background:var(--accent);color:#fff;cursor:pointer;border:0;vertical-align:baseline}
+  .item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+  .item.flash{outline:2px solid var(--accent)}
+  .item small{color:var(--muted)}
+  .snippet{margin:6px 0 0;font-size:13px;color:var(--muted);white-space:pre-wrap;
+           max-height:110px;overflow:auto}
+  .status{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .st-supported{background:var(--ok-bg);color:var(--ok)}
+  .st-unsupported{background:var(--warn-bg);color:var(--warn)}
+  .st-contradicted{background:var(--bad-bg);color:var(--bad)}
+  .hidden{display:none !important}
+  .hist{cursor:pointer}
+  .check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin:10px 0 0}
+  .check input{width:auto;margin:0}
+  .pair{margin-top:6px;font-size:14px}
+  .pair b{color:var(--accent)}
+  .alias{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Document Fusion</h1>
+  <div id="who" class="hidden" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <span id="whoName"></span><span id="whoLvl" class="badge"></span>
+    <div class="dots" id="dots"></div>
+    <button class="ghost" id="logout">Sign out</button>
+  </div>
+</header>
+
+<main>
+  <section class="card" id="loginCard">
+    <h2>Sign in</h2>
+    <label for="token">Access token</label>
+    <div class="row">
+      <input id="token" type="password" autocomplete="off" placeholder="paste the token from security.users add">
+      <button id="loginBtn">Sign in</button>
+    </div>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <div id="app" class="hidden" style="display:grid;gap:16px">
+    <section class="card">
+      <h2>1 · Add documents</h2>
+      <div class="row">
+        <div>
+          <label for="files">Files (PDF, DOCX, TXT, MD, images, .log)</label>
+          <input id="files" type="file" multiple>
+        </div>
+        <div>
+          <label for="level">Classification label</label>
+          <select id="level"></select>
+        </div>
+        <button id="uploadBtn">Upload &amp; index</button>
+      </div>
+      <label class="check" for="portion">
+        <input type="checkbox" id="portion">
+        These files use portion markings — paragraphs start with (U), (C), (S) or (TS)
+      </label>
+      <div class="msg">Label every file at its true classification. You can only pick levels up to your own clearance.
+        With portion markings, the label above is the document's <i>overall</i> level; each marked paragraph is then
+        indexed at its own level, and unmarked paragraphs keep the overall level.</div>
+      <div id="uploadMsg" class="msg"></div>
+    </section>
+
+    <section class="card">
+      <h2>2 · Ask a question</h2>
+      <textarea id="q" placeholder="e.g. What maintenance interval does the manual specify, and do the logs agree?"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="askBtn">Get verified answer</button>
+      </div>
+      <div id="askMsg" class="msg"></div>
+    </section>
+
+    <section class="card hidden" id="resultCard">
+      <h2>Answer</h2>
+      <div class="kpis" id="kpis"></div>
+      <div id="notes"></div>
+      <div class="answer" id="answer"></div>
+      <h2 style="margin-top:18px" id="conflictsH">Source conflicts</h2>
+      <div id="conflicts"></div>
+      <h2 style="margin-top:18px">Claim checks</h2>
+      <div id="claims"></div>
+      <h2 style="margin-top:18px">Sources</h2>
+      <div id="sources"></div>
+      <h2 style="margin-top:18px" id="entitiesH">Entities across sources</h2>
+      <div id="entities"></div>
+    </section>
+
+    <section class="card hidden" id="histCard">
+      <h2>Your recent questions</h2>
+      <div id="hist"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let token = sessionStorage.getItem("token") || "";
+  let me = null;
+
+  async function api(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, {Authorization: "Bearer " + token});
+    const r = await fetch(path, opts);
+    let body = null;
+    try { body = await r.json(); } catch(e) {}
+    if (!r.ok) {
+      const err = new Error((body && body.detail) || ("Request failed (" + r.status + ")"));
+      err.status = r.status;
+      throw err;
+    }
+    return body;
+  }
+
+  function el(tag, cls, text){
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function lvlBadge(level){
+    const idx = me ? Math.min(me.levels.indexOf(level), 3) : 0;
+    return el("span", "badge lvl-" + Math.max(idx, 0), level);
+  }
+  function setMsg(id, text, kind){
+    const n = $(id); n.textContent = text || ""; n.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  async function login(){
+    token = $("token").value.trim() || token;
+    if (!token) return;
+    try{
+      me = await api("/api/me");
+    }catch(e){
+      sessionStorage.removeItem("token");
+      setMsg("loginMsg", e.status === 401 ? "That token wasn't recognised." : e.message, "err");
+      return;
+    }
+    sessionStorage.setItem("token", token);
+    $("token").value = "";
+    setMsg("loginMsg", "");
+    $("loginCard").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("who").classList.remove("hidden");
+    $("whoName").textContent = me.user_id;
+    const b = lvlBadge(me.clearance); $("whoLvl").textContent = me.clearance; $("whoLvl").className = b.className;
+    const sel = $("level"); sel.textContent = "";
+    me.upload_levels.forEach(l => { const o = el("option", "", l); o.value = l; sel.appendChild(o); });
+    sel.value = me.clearance;
+    refreshHealth(); refreshHistory();
+  }
+
+  async function refreshHealth(){
+    const box = $("dots"); box.textContent = "";
+    try{
+      const h = await api("/api/health");
+      [["postgres","Database"],["neo4j","Provenance"],["llm","LLM"]].forEach(([k,label]) => {
+        const s = el("span"); const d = el("span", "dot " + (h[k] && h[k].ok ? "ok" : "bad"));
+        s.appendChild(d); s.appendChild(document.createTextNode(label));
+        if (h[k] && !h[k].ok) s.title = h[k].error || "unreachable";
+        box.appendChild(s);
+      });
+    }catch(e){}
+  }
+
+  async function refreshHistory(){
+    try{
+      const rows = await api("/api/history?limit=8");
+      const box = $("hist"); box.textContent = "";
+      $("histCard").classList.toggle("hidden", rows.length === 0);
+      rows.forEach(r => {
+        const d = el("div", "item hist");
+        d.appendChild(el("div", "", r.query));
+        d.appendChild(el("small", "", new Date(r.timestamp * 1000).toLocaleString()));
+        d.addEventListener("click", () => { $("q").value = r.query; $("q").focus(); });
+        box.appendChild(d);
+      });
+    }catch(e){}
+  }
+
+  async function upload(){
+    const files = $("files").files;
+    if (!files.length){ setMsg("uploadMsg", "Choose at least one file.", "err"); return; }
+    const fd = new FormData();
+    for (const f of files) fd.append("files", f);
+    fd.append("classification", $("level").value);
+    fd.append("portion_marked", $("portion").checked ? "true" : "false");
+    $("uploadBtn").disabled = true;
+    setMsg("uploadMsg", "Uploading and indexing… large scanned PDFs can take a few minutes.");
+    try{
+      const r = await api("/api/upload", {method:"POST", body: fd});
+      setMsg("uploadMsg", "Indexed " + r.chunks_stored + " chunks from " + r.files.length +
+             " file(s) at " + r.classification + (r.portion_marked ? " (portion-marked: per-paragraph levels applied)" : "") + ".", "good");
+      $("files").value = "";
+    }catch(e){ setMsg("uploadMsg", e.message, "err"); }
+    $("uploadBtn").disabled = false;
+  }
+
+  function renderAnswer(text){
+    const box = $("answer"); box.textContent = "";
+    text.split(/(\[S\d+\])/g).forEach(part => {
+      const m = part.match(/^\[S(\d+)\]$/);
+      if (m){
+        const b = el("button", "chip", "S" + m[1]);
+        b.type = "button";
+        b.addEventListener("click", () => {
+          const t = document.getElementById("src-" + m[1]);
+          if (t){ t.scrollIntoView({behavior:"smooth", block:"center"});
+                  t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1500); }
+        });
+        box.appendChild(b);
+      } else if (part){
+        box.appendChild(document.createTextNode(part));
+      }
+    });
+  }
+
+  function renderExtras(r){
+    const notes = $("notes"); notes.textContent = "";
+    if (r.query_expansion && r.query_expansion.length)
+      notes.appendChild(el("div", "msg", "Also searched under other names: " + r.query_expansion.join(", ") + "."));
+    if (r.redaction_count)
+      notes.appendChild(el("div", "msg", r.redaction_count + " passage detail(s) withheld as [REDACTED:…] — not available to your account."));
+    if (r.conflict_check === "failed")
+      notes.appendChild(el("div", "msg err", "The cross-source conflict check could not run, so this answer was NOT cross-checked between sources."));
+
+    const cf = r.conflicts || [], cbox = $("conflicts"); cbox.textContent = "";
+    $("conflictsH").classList.toggle("hidden", !cf.length);
+    cf.forEach(c => {
+      const d = el("div", "item");
+      const numeric = c.kind === "numeric";
+      d.appendChild(el("span", "status " + (numeric ? "st-unsupported" : "st-contradicted"),
+                       numeric ? "possible number mismatch" : "sources disagree"));
+      d.appendChild(document.createTextNode(" "));
+      d.appendChild(el("small", "", (c.acknowledged ? "the answer mentions both sides" : "not reflected in the answer — check both sources") +
+                                    (c.contradiction != null ? " · confidence " + Math.round(c.contradiction * 100) + "%" : "")));
+      [[c.source_a, c.sentence_a], [c.source_b, c.sentence_b]].forEach(([i, t]) => {
+        const p = el("div", "pair"); p.appendChild(el("b", "", "S" + i + ": ")); p.appendChild(document.createTextNode(t));
+        d.appendChild(p);
+      });
+      cbox.appendChild(d);
+    });
+
+    const en = r.entities || [], ebox = $("entities"); ebox.textContent = "";
+    $("entitiesH").classList.toggle("hidden", !en.length);
+    en.forEach(e => {
+      const d = el("div", "item");
+      d.appendChild(el("b", "", e.canonical)); d.appendChild(document.createTextNode(" "));
+      d.appendChild(el("small", "", e.label + (e.in_query ? " · in your question" : "") +
+                                    (e.sources.length ? " · " + e.sources.map(i => "S" + i).join(", ") : "")));
+      if (e.aliases.length) d.appendChild(el("div", "alias", "also written as: " + e.aliases.join(", ")));
+      ebox.appendChild(d);
+    });
+  }
+
+  function renderResult(r){
+    $("resultCard").classList.remove("hidden");
+    const total = r.supported_claims + r.unsupported_claims + r.contradicted_claims;
+    const k = $("kpis"); k.textContent = "";
+    [[total ? Math.round((1 - r.hallucination_rate) * 100) + "%" : "—", "claims supported"],
+     [r.supported_claims, "supported"], [r.unsupported_claims, "unsupported"],
+     [r.contradicted_claims, "contradicted"], [(r.conflicts || []).length, "source conflicts"],
+     [r.redaction_count || 0, "redactions applied"], [r.cited_doc_ids.length, "documents cited"]]
+      .forEach(([v, l]) => { const d = el("div", "kpi"); d.appendChild(el("b", "", String(v)));
+                             d.appendChild(el("span", "", l)); k.appendChild(d); });
+    renderAnswer(r.answer);
+    renderExtras(r);
+
+    const cl = $("claims"); cl.textContent = "";
+    if (!r.claims.length) cl.appendChild(el("div", "msg", "No claims to check."));
+    r.claims.forEach(c => {
+      const d = el("div", "item");
+      d.appendChild(el("span", "status st-" + c.status, c.status));
+      d.appendChild(document.createTextNode(" " + c.text + " "));
+      d.appendChild(el("small", "", c.cited.length ? "cites " + c.cited.map(i => "S" + i).join(", ") : "no citation"));
+      cl.appendChild(d);
+    });
+
+    const sr = $("sources"); sr.textContent = "";
+    r.sources.forEach(s => {
+      const d = el("div", "item"); d.id = "src-" + s.index;
+      const head = el("div");
+      head.appendChild(el("b", "", "S" + s.index + " · " + s.source_path + (s.page ? " · p." + s.page : "")));
+      head.appendChild(document.createTextNode(" ")); head.appendChild(lvlBadge(s.classification));
+      if (s.redactions){ head.appendChild(document.createTextNode(" ")); head.appendChild(el("span", "status st-unsupported", s.redactions + " redacted")); }
+      d.appendChild(head);
+      d.appendChild(el("small", "", "relevance " + s.score));
+      d.appendChild(el("div", "snippet", s.snippet));
+      sr.appendChild(d);
+    });
+  }
+
+  async function ask(){
+    const q = $("q").value.trim();
+    if (!q){ setMsg("askMsg", "Type a question first.", "err"); return; }
+    $("askBtn").disabled = true;
+    setMsg("askMsg", "Searching, writing and fact-checking the answer… this can take up to a minute.");
+    try{
+      const r = await api("/api/ask", {method:"POST", headers:{"Content-Type":"application/json"},
+                                        body: JSON.stringify({query:q})});
+      setMsg("askMsg", "");
+      renderResult(r);
+      refreshHistory();
+    }catch(e){ setMsg("askMsg", e.message, "err"); }
+    $("askBtn").disabled = false;
+  }
+
+  $("loginBtn").addEventListener("click", login);
+  $("token").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+  $("uploadBtn").addEventListener("click", upload);
+  $("askBtn").addEventListener("click", ask);
+  $("q").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ask(); });
+  $("logout").addEventListener("click", () => { sessionStorage.removeItem("token"); location.reload(); });
+
+  if (token) login();
+})();
+</script>
+</body>
+</html>
